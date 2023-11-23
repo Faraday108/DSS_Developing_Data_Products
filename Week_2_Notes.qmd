@@ -1,0 +1,10 @@
+---
+title: "Week_2_Notes"
+format: html
+---
+
+## Video: RMarkdown  
+This week starts off with RMarkdown information which I am already fairly familiar with so I neglected to record detailed notes. 
+
+### Publishing  
+The HTML of a published report or presentation can be pushed to GitHub and viewed if your repo has a gh-pages branch by changing the URL
