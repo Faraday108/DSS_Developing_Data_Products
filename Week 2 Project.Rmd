@@ -1,0 +1,85 @@
+---
+title: "Week 2 Project - Pittsburgh Trees"
+author: "Nathan Young"
+date: "`r Sys.Date()`"
+output: 
+  html_document: 
+    code_folding: hide
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(readr)
+library(leaflet)
+library(dplyr)
+```
+
+## Synopsis  
+For the Coursera "Data Products" Week 2 project I decide to use data pertaining to the city of Pittsburgh Pennsylvania in the US. The project is to visualize a dataset with leaflet and I was aware of data pertaining to this city so chose to visualize the `trees` dataset from this city. 
+
+## Data Import  
+```{r}
+url_trees <- "https://data.wprdc.org/datastore/dump/1515a93c-73e3-4425-9b35-1cd11b2196da"
+
+
+if (!file.exists("./data/trees.csv")) {
+  download.file(url_trees, destfile = "./data/trees.csv")
+}
+
+trees <- read_csv("./data/trees.csv", show_col_types = FALSE, col_types = cols("address_number" = 'c')) %>%
+  filter(!is.na(latitude))
+
+if (!file.exists("./data/green-icon.png")) {
+  download.file("https://leafletjs.com/examples/custom-icons/leaf-green.png", 
+                destfile = "./data/green-icon.png")
+}
+
+if (!file.exists("./data/orange-icon.png")) {
+  download.file("https://leafletjs.com/examples/custom-icons/leaf-orange.png", 
+                destfile = "./data/orange-icon.png")
+}
+
+if (!file.exists("./data/red-icon.png")) {
+  download.file("https://leafletjs.com/examples/custom-icons/leaf-red.png", 
+                destfile = "./data/red-icon.png")
+}
+
+if (!file.exists("./data/gray-icon.png")) {
+  library(magick)
+  i <- image_read("https://leafletjs.com/examples/custom-icons/leaf-orange.png")
+  ig <- image_quantize(i, colorspace = "gray")
+  image_write(ig, path = "./data/gray-icon.png")
+}
+```
+
+## Leaflet Creation 
+
+```{r, }
+#| collapse = TRUE
+leafIcons <- icons(
+  iconUrl = ifelse(trees$condition %in% c("Excellent", "Very Good", "Good"),
+    "https://leafletjs.com/examples/custom-icons/leaf-green.png",
+    ifelse(trees$condition %in% c("Fair"), "https://leafletjs.com/examples/custom-icons/leaf-orange.png",
+           ifelse(trees$condition %in% c("Poor", "Critical"), "https://leafletjs.com/examples/custom-icons/leaf-red.png", "./data/gray-icon.png"))
+  ),
+  iconWidth = 38, iconHeight = 95,
+  iconAnchorX = 22, iconAnchorY = 94,
+  shadowUrl = "https://leafletjs.com/examples/custom-icons/leaf-shadow.png",
+  shadowWidth = 50, shadowHeight = 64,
+  shadowAnchorX = 4, shadowAnchorY = 62
+)
+
+trees %>%
+  leaflet() %>%
+  addTiles(options = tileOptions(maxZoom = 20)) %>%
+  addMarkers(lng = trees$longitude,
+             lat = trees$latitude,
+    clusterOptions = markerClusterOptions(), 
+             icon = leafIcons, 
+             popup = paste("<b>Species:</b>", trees$common_name, "<br>", 
+                           "<b>Overall $ Benefits:</b>", round(trees$overall_benefits_dollar_value,2), "<br>", 
+                           "<b>Condition</b>", trees$condition))
+  
+```
+
+
