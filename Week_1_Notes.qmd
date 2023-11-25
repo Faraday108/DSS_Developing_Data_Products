@@ -3,6 +3,12 @@ title: "Week 1"
 format: html
 ---
 
+```{r setup}
+library(htmlwidgets)
+```
+
+
+
 ## Shiny
 I have neglected to take notes on Shiny as I have experience with the application already. 
 
@@ -20,6 +26,7 @@ At it's core, launches a small single pane Shiy application.
 ### A Simple Gadget: Code
 
 ```{r}
+#| eval: FALSE
 library(shiny)
 library(miniUI)
 
@@ -40,6 +47,7 @@ myFirstGadget <- function() {
 ### More complex app  
 
 ```{r}
+#| eval: FALSE
 library(shiny)
 library(miniUI)
 
@@ -66,6 +74,7 @@ multiplyNumbers <- function(numbers1, numbers2) {
 ### Shiny with interactive plots  
 
 ```{r}
+#| eval: FALSE
 library(shiny)
 library(miniUI)
 
@@ -104,11 +113,122 @@ pickTrees <- function() {
 ### Example 
 
 ```{r gv, results="asis", cache=TRUE}
+#| eval: FALSE
 suppressPackageStartupMessages(library(googleVis))
 M <- gvisMotionChart(Fruits, "Fruit", "Year",
                      options=list(width=600, height=400))
 #print(M,"chart")
 ```
 
+### Other chart types are available  
+Javascript maps with popups with interactivity. Many different configuration options can be passed to Googlevis chart
+
+Can use gvis merge to combine multiple plots together. 
+
+The visualizations can be embedded in websites with HTML code, embedded in RMarkdown based documents, knitr, slidify (use `results = "asis"`). Process can be finicky. 
+
+## Video: plotly  
+### What is Plotly?
+
+Plotly is a web application for creating and sharing data visualizations. Plotly can work with several programming languages and applications including R, Python, and Microsoft Excel. We're going to concentrate on creating different graphs with Plotly and sharing those graphs.
+
+### Basic Scatterplot
+
+A basic scatterplot is easy to make, with the added benefit of tooltips that appear when your mouse hovers over each point. Specify a scatterplot by indicating `type = "scatter"`. Notice that the arguments for the `x` and `y` variables as specified as formulas, with the tilde operator (`~`) preceding the variable that you're plotting.
 
 
+```{r}
+library(plotly)
+plot_ly(mtcars, x = ~wt, y = ~mpg, type = "scatter", mode = "markers")
+```
+
+### Options for scatterplot
+
+* Color: `plot_ly(..., color = as.factor(cyl))`
+* Continuous color: `plot_ly(..., color = disp)`
+* Point size: `plot_ly(..., color = as.factor(cyl), size = hp)`
+
+###3d scatterplot: uses webGL
+You can create 3d scatterplot with `type = scatter3d`. 
+
+```{r}
+#| eval: FALSE
+temp <- rnorm(100, mean = 30, sd = 5)
+pressure <- rnorm(100)
+dtime <- 1:100
+plot_ly(x = temp, y = pressure, z = dtime, type = "scatter3d", 
+        mode = "markers", color = temp)
+```
+
+### Line graph  
+```{r}
+#| eval: FALSE
+data("airmiles")
+plot_ly(x = time(y = airmiles), y = airmiles)
+```
+
+### Multi line graph  
+Can show multiple lines by specifying the column in data frame that separates the lines: 
+
+```{r}
+#| eval: FALSE
+library(plotly)
+library(tidyr)
+library(dplyr)
+data("EuStockMarkets")
+
+stocks <- as.data.frame(EuStockMarkets) %>%
+  #gather(index, price) %>%
+  pivot_longer(everything(), names_to = "index", values_to = "price") %>%
+  group_by(index) %>%
+  mutate(time = time(EuStockMarkets))
+
+plot_ly(stocks, x = ~time, y = ~price, color = ~index, type = "scatter", mode = "lines")
+```
+
+### Other plots  
+* Histogram: `plot_ly(x = , type = "histogram")`
+* Boxplot: `plot_ly(iris, y = Petal.Length, color = Species, type = "box")`
+* Graphical display of image: `plot_ly(z = madeupdata, type = "heatmap")`
+* 3D Surface: `plot_ly(z = madeupdata, type = "surface")`
+
+### Chloropleth maps  
+Choropleth maps illustrate data across geographic areas by shading regions with different colors. Choropleth maps are easy to make with Plotly though they require more setup compared to other Plotly graphics.
+
+```{r, eval=FALSE}
+# Create data frame
+state_pop <- data.frame(State = state.abb, Pop = as.vector(state.x77[,1]))
+state_income <- data.frame(State = state.abb, Inc = as.vector(state.x77[,2]))
+# Create hover text
+#state_pop$hover <- with(state_pop, paste(State, '<br>', "Population:", Pop))
+state_income$hover <- with(state_income, paste(State, '<br>', "Income:", Inc))
+# Make state borders red
+borders <- list(color = toRGB("red"))
+# Set up some mapping options
+map_options <- list(
+  scope = 'usa',
+  projection = list(type = 'albers usa'),
+  showlakes = TRUE,
+  lakecolor = toRGB('white')
+)
+
+plot_ly(z = ~state_income$Inc, text = ~state_income$hover, locations = ~state_income$State, 
+        type = 'choropleth', locationmode = 'USA-states', 
+        color = state_income$Inc, colors = 'Blues', marker = list(line = borders)) %>%
+  layout(title = 'US Income in 1975', geo = map_options)
+```
+
+### ggplot to plotly
+
+If you create a ggplot and save it as `p <- ggplot(...)` you can convert it to a plotly with `ggplotly(p)`
+
+### Output to plotly website  
+You can output a plot to the website and edit it with their user interface with `plotly_POST(graph)`  
+In order for it to work, you need to set two environment variables:
+```{r}
+#| eval: FALSE
+Sys.setenv("plotly_username" = "your_plotly_username")
+Sys.setenv("plotly_api_key" = "your_api_key")
+```
+
+You can save these in your .Rprofile file to be run every time you run R. 
