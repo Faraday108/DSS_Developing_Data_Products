@@ -1,0 +1,72 @@
+---
+title: "Week 3 Project"
+author: "Nathan Young"
+date: "`r Sys.Date()`"
+output: ioslides_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+library(plotly)
+library(tidyverse)
+```
+
+## Assignment Instructions  
+* Create a web page presentation using R Markdown that features a plot created with Plotly. 
+* Host your webpage on either GitHub Pages, RPubs, or NeoCities. 
+* Your webpage must contain the date that you created the document, and it must contain a plot created with Plotly. 
+* We would love to see you show off your creativity! 
+
+## Motivation  
+For this project, I chose to continue with the "Pittsburgh Trees" data set I examined in my project for creating a `leaflet` map in week two of this course. The dataset includes information on interesting variables such as tree condition, height, total pounds of air quality benefits and more that have relationships that can be explored with the aid of a `plotly` graph. 
+
+## Data Import
+* Data was downloaded from [Western PA Regional Data Center](https://data.wprdc.org/dataset/city-trees). 
+* Data cleaning applied was to remove `dead`, `stump`, `NA` condition trees and assign the `condition` variable to be a `factor` with levels `Excellent`, `Fair`, `Good`, `Poor`, and `Critical`
+
+```{r}
+url_trees <- "https://data.wprdc.org/datastore/dump/1515a93c-73e3-4425-9b35-1cd11b2196da"
+
+if (!file.exists("./data/trees.csv")) {
+  download.file(url_trees, destfile = "./data/trees.csv")
+}
+
+trees <- read_csv("./data/trees.csv", show_col_types = FALSE, col_types = cols("address_number" = 'c')) 
+trees <- trees %>%
+  filter(!is.na(latitude), 
+         condition %in% c("Excellent", "Fair", "Good", "Poor", "Critical")) %>%
+  mutate(condition = factor(condition, levels = c("Excellent", "Fair", "Good", "Poor", "Critical")))
+```
+
+## Plotly Histogram
+
+```{r, warning=FALSE}
+plot_ly(y = trees$air_quality_benfits_total_lbs, color = ~trees$condition, type = "box") %>%
+  layout(title = "Reduction in air quality benefit with worstening tree condition", 
+         xaxis = list(title = "Tree Condition"), 
+         yaxis = list(title = "Total Air quality benefits (lbs)"))
+```
+
+## Plotly Histogram
+
+```{r, warning=FALSE}
+with(trees[(trees$height < 100) & (trees$height > 12),], plot_ly(y = air_quality_benfits_total_lbs, 
+        color = ~cut(height, breaks = 8), type = "box")) %>%
+  layout(title = "Increase in air quality benefit with tree height", 
+         xaxis = list(title = "Tree Height (ft)"), 
+         yaxis = list(title = "Total Air quality benefits (lbs)"), 
+         legend = list(title=list(text='<b> Tree Height </b>')))
+```
+
+## Convert ggplot object to plotly  
+
+```{r}
+ggfig <- trees %>%
+  filter(height > 1, height < 100) %>%
+  ggplot(aes(x = height, y = air_quality_benfits_total_lbs, color = condition)) +
+  geom_smooth() + 
+  ggtitle("Increase in air quality benefits depend on tree condition")
+
+ggplotly(ggfig)
+```
+
